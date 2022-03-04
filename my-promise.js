@@ -2,13 +2,15 @@
  * @Author: BGG
  * @Date: 2022-03-04 15:42:30
  * @LastEditors: BGG
- * @LastEditTime: 2022-03-04 16:27:01
+ * @LastEditTime: 2022-03-04 16:58:05
  * @Description:  Promise/A+ 规范实现
  */
 
 const PENDING = 'pending';
 const FULFILLED = 'fulfilled';
 const REJECTED = 'rejected'
+
+const TYPE_ERROR = 'Chaining cycle detected for promise #<Promise>'
 
 class MyPromise {
 
@@ -42,6 +44,8 @@ class MyPromise {
       // 判断成功回调是否存在，存在则调用
       while (onFulfilledCallbacks.length) {
         onFulfilledCallbacks.shift()(value)
+        // const x = onFulfilledCallbacks.shift()(value)
+        // resolvePromise(x, resolve, reject)
       }
     }
   }
@@ -63,29 +67,51 @@ class MyPromise {
   }
 
   then (onFulfilled, onRejected) {
-    const { status, value, reason } = this
+    const promise2 = new MyPromise((resolve, reject) => {
+      const {
+        status,
+        value,
+        reason,
+        onFulfilledCallbacks,
+        onRejectedCallbacks
+      } = this
 
-    // switch (status) {
-    //   case FULFILLED:
-    //     onFulfilled(value)
-    //     break
-    //   case REJECTED:
-    //     onRejected(reason)
-    //     break
-    //   case PENDING:
-    //     this.onFulfilledCallbacks = onFulfilled
-    //     this.onRejectedCallbacks = onRejected
-    //     break
-    // }
+      // 这里的内容在执行器种，会立即执行
+      if (status === FULFILLED) {
+        // 创建一个微任务等待 promise2 完成初始化
+        queueMicrotask(() => {
+          // 获取成功回调函数的结果
+          const x = onFulfilled(value)
 
-    if (status === FULFILLED) {
-      onFulfilled(value)
-    } else if (status === REJECTED) {
-      onRejected(reason)
-    } else if (status === PENDING) {
-      onFulfilled && this.onFulfilledCallbacks.push(onFulfilled)
-      onRejected && this.onRejectedCallbacks.push(onRejected)
-    }
+          // 传入 resolvePromise 集中处理
+          resolvePromise(promise2, x, resolve, reject)
+        })
+      } else if (status === REJECTED) {
+        onRejected(reason)
+      } else if (status === PENDING) {
+        onFulfilled && onFulfilledCallbacks.push(onFulfilled)
+        onRejected && onRejectedCallbacks.push(onRejected)
+      }
+    })
+
+    return promise2
+  }
+}
+
+function resolvePromise (promise2, x, resolve, reject) {
+  // 是否返回自己，是则抛出类型错误并返回
+  if (promise2 === x) {
+    return reject(new TypeError(TYPE_ERROR))
+  }
+  // x 是否为 MyPromise 实例对象
+  if (x instanceof MyPromise) {
+    // 执行x，调用 then 方法，目的是将其状态变为 fulfilled 或 rejected
+    // x.then(value => resolve(value), reason => reject(reason))
+    // 简化后
+    x.then(resolve, reject)
+  } else {
+    // 普通值（或未返回）
+    resolve(x)
   }
 }
 
