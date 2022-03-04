@@ -1,15 +1,15 @@
 const MyPromsie = require('./my-promise')
 
-// const promise = new MyPromsie((resolve, reject) => {
-//   setTimeout(() => {
-//     resolve('success')
-//   }, 2000)
-// })
-
 const promise = new MyPromsie((resolve, reject) => {
-  // resolve('success')
-  throw new Error('执行程序错误')
+  setTimeout(() => {
+    resolve('success')
+  }, 2000)
 })
+
+// const promise = new MyPromsie((resolve, reject) => {
+//   // resolve('success')
+//   throw new Error('执行程序错误')
+// })
 
 // promise.then(
 //   res => {
@@ -57,12 +57,12 @@ const promise = new MyPromsie((resolve, reject) => {
 //   return promise
 // })
 
-promise.then(
-  res => {
-    console.log(res)
-  },
-  err => {
-    console.log('发生错误啦')
-    // console.log(err)
-  }
-)
+// promise.then(
+//   res => {
+//     console.log(res)
+//   },
+//   err => {
+//     console.log('发生错误啦')
+//     // console.log(err)
+//   }
+// )

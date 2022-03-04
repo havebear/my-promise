@@ -2,7 +2,7 @@
  * @Author: BGG
  * @Date: 2022-03-04 15:42:30
  * @LastEditors: BGG
- * @LastEditTime: 2022-03-04 17:14:41
+ * @LastEditTime: 2022-03-04 17:31:01
  * @Description:  Promise/A+ 规范实现
  */
 
@@ -86,19 +86,43 @@ class MyPromise {
         queueMicrotask(() => {
           try {
             // 获取成功回调函数的结果
-            const x = onFulfilled(this.value)
-
+            // const x = onFulfilled(this.value)
             // 传入 resolvePromise 集中处理
-            resolvePromise(promise2, x, resolve, reject)
+            resolvePromise(promise2, onFulfilled(this.value), resolve, reject)
           } catch (error) {
             reject(error)
           }
         })
       } else if (status === REJECTED) {
-        onRejected(reason)
+        // 创建一个微任务等待 promise2 完成初始化
+        queueMicrotask(() => {
+          try {
+            // 调用失败回调，并返回原因
+            // const x = onRejected(this.reason)
+            // 传入 resolvePromise 集中处理
+            resolvePromise(promise2, onRejected(this.reason), resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
+        })
       } else if (status === PENDING) {
-        onFulfilled && onFulfilledCallbacks.push(onFulfilled)
-        onRejected && onRejectedCallbacks.push(onRejected)
+        // 等待
+        // 因为不知道后面状态的变化情况，所以将成功回调和失败回调存储起来
+        // 等到执行成功失败函数时再传递
+        onFulfilled && onFulfilledCallbacks.push(() => {
+          try {
+            resolvePromise(promise2, onFulfilled(this.value), resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
+        })
+        onRejected && onRejectedCallbacks.push(() => {
+          try {
+            resolvePromise(promise2, onRejected(this.reason), resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
+        })
       }
     })
 
