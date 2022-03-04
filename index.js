@@ -7,7 +7,8 @@ const MyPromsie = require('./my-promise')
 // })
 
 const promise = new MyPromsie((resolve, reject) => {
-  resolve('success')
+  // resolve('success')
+  throw new Error('执行程序错误')
 })
 
 // promise.then(
@@ -34,11 +35,11 @@ const promise = new MyPromsie((resolve, reject) => {
 //   }
 // )
 
-function other () {
-  return new Promise((resolve, reject) => {
-    resolve('other')
-  })
-}
+// function other () {
+//   return new Promise((resolve, reject) => {
+//     resolve('other')
+//   })
+// }
 
 /** 链式调用 */
 // promise.then(res => {
@@ -50,8 +51,18 @@ function other () {
 //   console.log('resolve', res)
 // })
 
-promise.then(res => {
-  console.log(1)
-  console.log('resolve', res)
-  return promise
-})
+// promise.then(res => {
+//   console.log(1)
+//   console.log('resolve', res)
+//   return promise
+// })
+
+promise.then(
+  res => {
+    console.log(res)
+  },
+  err => {
+    console.log('发生错误啦')
+    // console.log(err)
+  }
+)

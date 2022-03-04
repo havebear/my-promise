@@ -2,7 +2,7 @@
  * @Author: BGG
  * @Date: 2022-03-04 15:42:30
  * @LastEditors: BGG
- * @LastEditTime: 2022-03-04 16:58:05
+ * @LastEditTime: 2022-03-04 17:14:41
  * @Description:  Promise/A+ 规范实现
  */
 
@@ -15,7 +15,11 @@ const TYPE_ERROR = 'Chaining cycle detected for promise #<Promise>'
 class MyPromise {
 
   constructor (executor) {
-    executor(this.resolve, this.reject)
+    try {
+      executor(this.resolve, this.reject)
+    } catch (error) {
+      this.reject(error)
+    }
   }
 
   /** 实例属性 */
@@ -67,24 +71,28 @@ class MyPromise {
   }
 
   then (onFulfilled, onRejected) {
+    // 为了链式调用这里直接创建一个 MyPromise，并在后面 return 出去
     const promise2 = new MyPromise((resolve, reject) => {
       const {
         status,
-        value,
         reason,
         onFulfilledCallbacks,
         onRejectedCallbacks
       } = this
 
-      // 这里的内容在执行器种，会立即执行
+      // 状态为执行中
       if (status === FULFILLED) {
         // 创建一个微任务等待 promise2 完成初始化
         queueMicrotask(() => {
-          // 获取成功回调函数的结果
-          const x = onFulfilled(value)
+          try {
+            // 获取成功回调函数的结果
+            const x = onFulfilled(this.value)
 
-          // 传入 resolvePromise 集中处理
-          resolvePromise(promise2, x, resolve, reject)
+            // 传入 resolvePromise 集中处理
+            resolvePromise(promise2, x, resolve, reject)
+          } catch (error) {
+            reject(error)
+          }
         })
       } else if (status === REJECTED) {
         onRejected(reason)
