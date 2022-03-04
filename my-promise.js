@@ -2,7 +2,7 @@
  * @Author: BGG
  * @Date: 2022-03-04 15:42:30
  * @LastEditors: BGG
- * @LastEditTime: 2022-03-04 16:00:11
+ * @LastEditTime: 2022-03-04 16:27:01
  * @Description:  Promise/A+ 规范实现
  */
 
@@ -26,19 +26,23 @@ class MyPromise {
   reason = null
 
   // 存储成功回调函数
-  onFulfilledCallback = null
+  onFulfilledCallbacks = []
   // 存储失败回调函数
-  onRjeectedCallback = null
+  onRejectedCallbacks = []
 
   /** 更改完成后的状态 */
   resolve = value => {
     /** 只有等待状态才能修改状态 */
     if (this.status === PENDING) {
+      const { onFulfilledCallbacks } = this
+
       this.status = FULFILLED
       this.value = value
 
       // 判断成功回调是否存在，存在则调用
-      this.onFulfilledCallback && this.onFulfilledCallback(value)
+      while (onFulfilledCallbacks.length) {
+        onFulfilledCallbacks.shift()(value)
+      }
     }
   }
   
@@ -46,11 +50,15 @@ class MyPromise {
   reject = reason => {
     /** 只有等待状态才能修改状态 */
     if (this.status === PENDING) {
+      const { onRejectedCallbacks } = this
+
       this.status = REJECTED
       this.reason = reason
 
       // 判断失败回调是否存在，存在则调用
-      this.onRjeectedCallback && this.onRjeectedCallback(value)
+      while (onRejectedCallbacks.length) {
+        onRejectedCallbacks.shift()(value)
+      }
     }
   }
 
@@ -65,8 +73,8 @@ class MyPromise {
     //     onRejected(reason)
     //     break
     //   case PENDING:
-    //     this.onFulfilledCallback = onFulfilled
-    //     this.onRjeectedCallback = onRejected
+    //     this.onFulfilledCallbacks = onFulfilled
+    //     this.onRejectedCallbacks = onRejected
     //     break
     // }
 
@@ -75,8 +83,8 @@ class MyPromise {
     } else if (status === REJECTED) {
       onRejected(reason)
     } else if (status === PENDING) {
-      this.onFulfilledCallback = onFulfilled
-      this.onRjeectedCallback = onRejected
+      onFulfilled && this.onFulfilledCallbacks.push(onFulfilled)
+      onRejected && this.onRejectedCallbacks.push(onRejected)
     }
   }
 }
