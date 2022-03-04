@@ -1,8 +1,9 @@
 const MyPromsie = require('./my-promise')
 
 const promise = new MyPromsie((resolve, reject) => {
-  resolve('success')
-  reject('err')
+  setTimeout(() => {
+    resolve('success')
+  }, 2000)
 })
 
 promise.then(

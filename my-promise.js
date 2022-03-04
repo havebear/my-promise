@@ -25,12 +25,20 @@ class MyPromise {
   // 拒绝原因（失败之后的原因）
   reason = null
 
+  // 存储成功回调函数
+  onFulfilledCallback = null
+  // 存储失败回调函数
+  onRjeectedCallback = null
+
   /** 更改完成后的状态 */
   resolve = value => {
     /** 只有等待状态才能修改状态 */
     if (this.status === PENDING) {
       this.status = FULFILLED
       this.value = value
+
+      // 判断成功回调是否存在，存在则调用
+      this.onFulfilledCallback && this.onFulfilledCallback(value)
     }
   }
   
@@ -40,14 +48,35 @@ class MyPromise {
     if (this.status === PENDING) {
       this.status = REJECTED
       this.reason = reason
+
+      // 判断失败回调是否存在，存在则调用
+      this.onRjeectedCallback && this.onRjeectedCallback(value)
     }
   }
 
   then (onFulfilled, onRejected) {
-    if (this.status === FULFILLED) {
-      onFulfilled(this.value)
-    } else if (this.status === REJECTED) {
-      onRejected(REJECTED)
+    const { status, value, reason } = this
+
+    // switch (status) {
+    //   case FULFILLED:
+    //     onFulfilled(value)
+    //     break
+    //   case REJECTED:
+    //     onRejected(reason)
+    //     break
+    //   case PENDING:
+    //     this.onFulfilledCallback = onFulfilled
+    //     this.onRjeectedCallback = onRejected
+    //     break
+    // }
+
+    if (status === FULFILLED) {
+      onFulfilled(value)
+    } else if (status === REJECTED) {
+      onRejected(reason)
+    } else if (status === PENDING) {
+      this.onFulfilledCallback = onFulfilled
+      this.onRjeectedCallback = onRejected
     }
   }
 }
